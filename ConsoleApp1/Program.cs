@@ -1,11 +1,7 @@
-﻿using ConsoleApp1;
-//using MoreLinq;
-using System.Linq;
-using System;
-using System.Security.Cryptography.X509Certificates;
-//Global Counter
+﻿var watch = new System.Diagnostics.Stopwatch();
+
+watch.Start();
 int countGreen = 0;
-//end global counter
 
 
 #region Setup Data Set
@@ -186,7 +182,7 @@ List<(List<int[]>,List<int[]>, List<string>,string)> listPositionYellow = new Li
 };
 List<string> route = new();
 int routeBestTry = 0;
-IList<Eligible> eligible = new List<Eligible>();
+//IList<Eligible> eligible = new List<Eligible>();
 Random rnd = new Random();
 
 //printMatrix(matrizPrincipal, "Matrix Inicial");
@@ -204,26 +200,12 @@ while (Reached == false)
     Reached = TryPath();
     matrizPrincipal[0, 0] = 3;
     matrizPrincipal[linhas - 1, colunas - 1] = 4;
-    //if (route.Count != 0 && route.Last() == "No Route")
-    //{
-    //    if(routeBestTry == 0)
-    //    {
-    //        routeBestTry = route.Count;
-    //    }else if (route.Count > routeBestTry)
-    //    {
-    //        routeBestTry = route.Count;
-    //    }
-    //    route.Clear();
-    //    matrizTemp = new int[linhas, colunas];
-    //    matrizPrincipal = matrizPrincipal1;
-    //    continue;
-    //}
-    //eligible[rnd.Next(0, eligible.Count())].Method.Invoke();
-    //printMatrix(matrizPrincipal, "principal");
-    //printMatrix(matrizTemp, "temporaria");
-    //(matrizTemp, "Matrix Temporária");
+
     matrizTemp = new int[linhas, colunas];
 }
+watch.Stop();
+
+Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
 Console.ReadLine();
 
 //Methods
@@ -418,11 +400,6 @@ bool TryPath()
                 listaPositionYellowTmp.Add((new List<int[]> { posicaoAntiga }, new List<int[]> { posicaoNova }, new List<string> { "Direita" }, positionCheck));
 
             }
-
-            if (eligible.Count == 0)
-            {
-                route.Add("No Route");
-            }
         }
 
         //verificação segundo elemento(ateh penultino)/primeira linha
@@ -476,10 +453,6 @@ bool TryPath()
                 //matrizTemp[positionYellow[0], positionYellow[1]] = 3;
                 //return;
             }
-            if (eligible.Count == 0)
-            {
-                route.Add("No Route");
-            }
         }
 
         //verificação ultimo elemento/primeira linha
@@ -516,10 +489,6 @@ bool TryPath()
                 //route.Add("Esquerda");
                 //matrizTemp[positionYellow[0], positionYellow[1]] = 3;
                 //return;
-            }
-            if (eligible.Count == 0)
-            {
-                route.Add("No Route");
             }
         }
         #endregion
@@ -576,11 +545,6 @@ bool TryPath()
                 //route.Add("Direita");
                 //matrizTemp[positionYellow[0], positionYellow[1]] = 3;
                 //return;
-            }
-
-            if (eligible.Count == 0)
-            {
-                route.Add("No Route");
             }
         }
 
@@ -651,10 +615,6 @@ bool TryPath()
                 //matrizTemp[positionYellow[0], positionYellow[1]] = 3;
                 //return;
             }
-            if (eligible.Count == 0)
-            {
-                route.Add("No Route");
-            }
         }
 
         //verificação ultimo elemento/linhas internas
@@ -708,10 +668,6 @@ bool TryPath()
                 //matrizTemp[positionYellow[0], positionYellow[1]] = 3;
                 //return;
             }
-            if (eligible.Count == 0)
-            {
-                route.Add("No Route");
-            }
         }
         #endregion
 
@@ -750,10 +706,6 @@ bool TryPath()
                 //route.Add("Direita");
                 //matrizTemp[positionYellow[0], positionYellow[1]] = 3;
                 //return;
-            }
-            if (eligible.Count == 0)
-            {
-                route.Add("No Route");
             }
         }
 
@@ -808,10 +760,6 @@ bool TryPath()
                 //route.Add("Direita");
                 //matrizTemp[positionYellow[0], positionYellow[1]] = 3;
                 //return;
-            }
-            if (eligible.Count == 0)
-            {
-                route.Add("No Route");
             }
         }
 
