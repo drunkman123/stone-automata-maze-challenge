@@ -368,6 +368,7 @@ void StepExecute()
 }
 bool TryPath()
 {
+    //item1 eh posicao anterior, item2 eh posicao atual, item3 é o movimento e item4 eh o item2 em tostring
     var listaPositionYellowTmp = new List<(List<int[]>, List<int[]>, List<string>,string)>();
     foreach (var t in listPositionYellow)
     {
