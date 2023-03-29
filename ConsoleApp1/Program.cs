@@ -58,11 +58,10 @@ int[,] tempMatrice = new int[lines, columns];
 
 while (Reached == false)
 {
-    StepExecute();
-    baseMatrice = tempMatrice;
     baseMatrice.SetValue(0, 0, 0);
     baseMatrice.SetValue(0, lines - 1, columns - 1);
-    //printMatrix(baseMatrice, "Matrix Temp");
+    StepExecute();
+    baseMatrice = tempMatrice;
     Reached = TryPath();
     baseMatrice[0, 0] = 3;
     baseMatrice[lines - 1, columns - 1] = 4;
@@ -71,6 +70,7 @@ while (Reached == false)
 watch.Stop();
 
 Console.WriteLine($"\r\nExecution Time: {watch.ElapsedMilliseconds} ms");
+
 
 //Methods
 void StepExecute()
@@ -85,15 +85,11 @@ void StepExecute()
             //verificação segundo elemento(ateh penultino)/primeira linha
             if (i.Equals(0) && j != 0 && j != columns - 1)
             {
-                if (baseMatrice[i, j - 1].Equals(1)) countGreen++;
-
-                if (baseMatrice[i + 1, j - 1].Equals(1)) countGreen++;
-
-                if (baseMatrice[i + 1, j].Equals(1)) countGreen++;
-
-                if (baseMatrice[i + 1, j + 1].Equals(1)) countGreen++;
-
-                if (baseMatrice[i, j + 1].Equals(1)) countGreen++;
+                countGreen += baseMatrice[i, j - 1]; 
+                countGreen += baseMatrice[i + 1, j - 1];
+                countGreen += baseMatrice[i + 1, j];
+                countGreen += baseMatrice[i + 1, j + 1];
+                countGreen += baseMatrice[i, j + 1];
 
                 CheckChangeAndResetCount(i, j);
             }
@@ -101,11 +97,9 @@ void StepExecute()
             //verificação ultimo elemento/primeira linha
             if (i.Equals(0) && j == columns - 1)
             {
-                if (baseMatrice[i, j - 1].Equals(1)) countGreen++;
-
-                if (baseMatrice[i + 1, j - 1].Equals(1)) countGreen++;
-
-                if (baseMatrice[i + 1, j].Equals(1)) countGreen++;
+                countGreen += baseMatrice[i, j - 1];
+                countGreen += baseMatrice[i + 1, j - 1];
+                countGreen += baseMatrice[i + 1, j];
 
                 CheckChangeAndResetCount(i, j);
             }
@@ -115,15 +109,12 @@ void StepExecute()
             //verificação primeiro elemento/lines internas
             if (i != 0 && i != lines - 1 && j.Equals(0))
             {
-                if (baseMatrice[i - 1, j].Equals(1)) countGreen++;
+                countGreen += baseMatrice[i-1, j];
+                countGreen += baseMatrice[i - 1, j + 1];
+                countGreen += baseMatrice[i, j + 1];
+                countGreen += baseMatrice[i + 1, j + 1];
+                countGreen += baseMatrice[i + 1, j];
 
-                if (baseMatrice[i - 1, j + 1].Equals(1)) countGreen++;
-
-                if (baseMatrice[i, j + 1].Equals(1)) countGreen++;
-
-                if (baseMatrice[i + 1, j + 1].Equals(1)) countGreen++;
-
-                if (baseMatrice[i + 1, j].Equals(1)) countGreen++;
 
                 CheckChangeAndResetCount(i, j);
             }
@@ -131,21 +122,21 @@ void StepExecute()
             //verificação segundo elemento(ateh penultino)/lines internas
             if (i != 0 && i != lines - 1 && j != 0 && j != columns - 1)
             {
-                if (baseMatrice[i - 1, j - 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i - 1, j - 1];
 
-                if (baseMatrice[i - 1, j].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i - 1, j];
 
-                if (baseMatrice[i - 1, j + 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i - 1, j+1];
 
-                if (baseMatrice[i, j - 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i, j-1];
 
-                if (baseMatrice[i, j + 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i, j+1];
 
-                if (baseMatrice[i + 1, j - 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i+1, j-1];
 
-                if (baseMatrice[i + 1, j].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i+1, j];
 
-                if (baseMatrice[i + 1, j + 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i+1, j+1];
 
                 CheckChangeAndResetCount(i, j);
             }
@@ -153,15 +144,15 @@ void StepExecute()
             //verificação ultimo elemento/lines internas
             if (i != 0 && i != lines - 1 && j == columns - 1)
             {
-                if (baseMatrice[i - 1, j].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i - 1, j];
 
-                if (baseMatrice[i - 1, j - 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i - 1, j - 1];
 
-                if (baseMatrice[i, j - 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i, j-1];
 
-                if (baseMatrice[i + 1, j - 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i+1, j-1];
 
-                if (baseMatrice[i + 1, j].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i+1, j];
 
                 CheckChangeAndResetCount(i, j);
             }
@@ -171,11 +162,11 @@ void StepExecute()
             //verificação primeiro elemento/ultima linha
             if (i == lines - 1 && j.Equals(0))
             {
-                if (baseMatrice[i - 1, j].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i - 1, j];
 
-                if (baseMatrice[i - 1, j + 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i - 1, j+1];
 
-                if (baseMatrice[i, j + 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i, j+1];
 
                 CheckChangeAndResetCount(i, j);
             }
@@ -183,31 +174,18 @@ void StepExecute()
             //verificação segundo elemento(ateh penultino)/ultima linha
             if (i == lines - 1 && j != 0 && j != columns - 1)
             {
-                if (baseMatrice[i, j - 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i, j-1];
 
-                if (baseMatrice[i - 1, j - 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i - 1, j - 1];
 
-                if (baseMatrice[i - 1, j].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i - 1, j];
 
-                if (baseMatrice[i - 1, j + 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i - 1, j+1];
 
-                if (baseMatrice[i, j + 1].Equals(1)) countGreen++;
+                 countGreen += baseMatrice[i, j+1];
 
                 CheckChangeAndResetCount(i, j);
             }
-
-            //verificação ultimo elemento/ultima linha
-            //if (i == lines - 1 && j == columns - 1)
-            //{
-            //    if (baseMatrice[i, j - 1].Equals(1)) countGreen++;
-
-            //    if (baseMatrice[i - 1, j - 1].Equals(1)) countGreen++;
-
-            //    if (baseMatrice[i - 1, j].Equals(1)) countGreen++;
-
-            //    CheckChangeAndResetCount(i, j);
-
-            //}
             #endregion
         }
 
@@ -468,24 +446,24 @@ void CheckChangeAndResetCount(int i, int j)
     if (baseMatrice[i, j] == 1 && countGreen > 3 && countGreen < 6) tempMatrice.SetValue(1, i, j);
     countGreen = 0;
 }
-void printMatrix(int[,] matrix, string name)
-{
-    Console.Write(name + "\n");
+//void printMatrix(int[,] matrix, string name)
+//{
+//    Console.Write(name + "\n");
 
-    for (int i = 0; i < lines; i++)
-    {
-        for (int j = 0; j < columns; j++)
-        {
+//    for (int i = 0; i < lines; i++)
+//    {
+//        for (int j = 0; j < columns; j++)
+//        {
 
-            Console.Write(matrix[i, j].ToString() + " ");
-        }
+//            Console.Write(matrix[i, j].ToString() + " ");
+//        }
 
-        Console.Write("\n");
+//        Console.Write("\n");
 
-    }
-    Console.Write("\n");
+//    }
+//    Console.Write("\n");
 
-}
+//}
 void AddRoute(int i, int j, string route, List<(int[,], int[,], string,string)> listaPosition)
 {
     int[,] lastPosition = { { i, j } };
