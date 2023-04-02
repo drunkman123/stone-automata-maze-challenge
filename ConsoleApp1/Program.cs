@@ -1,32 +1,42 @@
 ﻿using System.Diagnostics;
-using System.Text;
 
 var watch = new Stopwatch();
 watch.Start();
 #region Global Variables
 int countGreen = 0;
-int[,] lastPosition = { { 0, 0 } };
-int[,] currentPosition = { { 0, 0 } };
+(int,int) Goal = ( 0, 0 );
+(int,int) Start = ( 0, 0 );
+bool DeadEnd = false;
+bool Found = false;
+int lastIndex = 0;
 int loopCounter = 0;
-List<List<(int[,], int[,], string, string)>> listAllPositionSteps = new List<List<(int[,], int[,], string, string)>>();
-List<(int[,], int[,], string, string)> listPositionSteps = new List<(int[,], int[,], string, string)>
+List<List<PositionStep>> listAllPositionSteps = new List<List<PositionStep>>();
+string route = string.Empty;
+HashSet<PositionStep> listPositionStepTmp = new HashSet<PositionStep>(new TupleEqualityComparer());
+
+List<PositionStep> listPositionSteps = new List<PositionStep>()
 {
-    (lastPosition,currentPosition,string.Empty,string.Empty)
+    new PositionStep(Start, Start, string.Empty)
 };
-var Reached = false;
+
+
+
+
 #endregion
 
 #region Setup Data Set
 int lines;
 int columns;
 int[,] baseMatrice;
+int[,] tempMatrice;
 
-using (StreamReader reader = new StreamReader("C:\\Users\\felip\\OneDrive\\Área de Trabalho\\input.txt"))
+//using (StreamReader reader = new StreamReader("C:\\Users\\felip\\OneDrive\\Área de Trabalho\\input sigma 3.txt"))
+using (StreamReader reader = new StreamReader("C:\\Users\\felip\\OneDrive\\Área de Trabalho\\input2.txt"))
 {
     string line;
     List<int[]> rows = new List<int[]>();
 
-    while ((line = reader.ReadLine()) != null)
+    while ((line = reader.ReadLine()!) != null)
     {
         string[] values = line.Split(' ');
         int[] row = new int[values.Length];
@@ -48,24 +58,29 @@ using (StreamReader reader = new StreamReader("C:\\Users\\felip\\OneDrive\\Área
         for (int j = 0; j < numCols; j++)
         {
             baseMatrice[i, j] = rows[i][j];
+            if (rows[i][j] == 3) Start = ( i,j );
+            if (rows[i][j] == 4) Goal = ( i,j );
         }
     }
     lines = numRows;
     columns = numCols;
 }
-int[,] tempMatrice = new int[lines, columns];
 #endregion
+tempMatrice = new int[lines, columns];
 
-while (Reached == false)
+while (!Found && !DeadEnd)
 {
-    baseMatrice.SetValue(0, 0, 0);
-    baseMatrice.SetValue(0, lines - 1, columns - 1);
+    baseMatrice[Start.Item1, Start.Item2] = 0;
+    baseMatrice[Goal.Item1, Goal.Item2] = 0;
     StepExecute();
     baseMatrice = tempMatrice;
-    Reached = TryPath();
-    baseMatrice[0, 0] = 3;
-    baseMatrice[lines - 1, columns - 1] = 4;
-    tempMatrice = new int[lines, columns];
+    TryPath();
+    tempMatrice= new int[lines, columns];
+}
+if (DeadEnd) Console.WriteLine("No Paths Available!");
+else
+{
+    GetPath();
 }
 watch.Stop();
 
@@ -73,7 +88,7 @@ Console.WriteLine($"\r\nExecution Time: {watch.ElapsedMilliseconds} ms");
 
 
 //Methods
-void StepExecute()
+async void StepExecute()
 {
     for (int i = 0; i < lines; i++)
     {
@@ -81,11 +96,10 @@ void StepExecute()
         {
 
             #region first line
-
             //verificação segundo elemento(ateh penultino)/primeira linha
-            if (i.Equals(0) && j != 0 && j != columns - 1)
+            if (i == 0 && j != 0 && j != columns - 1)
             {
-                countGreen += baseMatrice[i, j - 1]; 
+                countGreen += baseMatrice[i, j - 1];
                 countGreen += baseMatrice[i + 1, j - 1];
                 countGreen += baseMatrice[i + 1, j];
                 countGreen += baseMatrice[i + 1, j + 1];
@@ -95,7 +109,7 @@ void StepExecute()
             }
 
             //verificação ultimo elemento/primeira linha
-            if (i.Equals(0) && j == columns - 1)
+            if (i == 0 && j == columns - 1)
             {
                 countGreen += baseMatrice[i, j - 1];
                 countGreen += baseMatrice[i + 1, j - 1];
@@ -107,9 +121,9 @@ void StepExecute()
 
             #region mid lines
             //verificação primeiro elemento/lines internas
-            if (i != 0 && i != lines - 1 && j.Equals(0))
+            if (i != 0 && i != lines - 1 && j == 0 && !Found)
             {
-                countGreen += baseMatrice[i-1, j];
+                countGreen += baseMatrice[i - 1, j];
                 countGreen += baseMatrice[i - 1, j + 1];
                 countGreen += baseMatrice[i, j + 1];
                 countGreen += baseMatrice[i + 1, j + 1];
@@ -122,330 +136,241 @@ void StepExecute()
             //verificação segundo elemento(ateh penultino)/lines internas
             if (i != 0 && i != lines - 1 && j != 0 && j != columns - 1)
             {
-                 countGreen += baseMatrice[i - 1, j - 1];
-
-                 countGreen += baseMatrice[i - 1, j];
-
-                 countGreen += baseMatrice[i - 1, j+1];
-
-                 countGreen += baseMatrice[i, j-1];
-
-                 countGreen += baseMatrice[i, j+1];
-
-                 countGreen += baseMatrice[i+1, j-1];
-
-                 countGreen += baseMatrice[i+1, j];
-
-                 countGreen += baseMatrice[i+1, j+1];
-
+                countGreen += baseMatrice[i - 1, j - 1];
+                countGreen += baseMatrice[i - 1, j];
+                countGreen += baseMatrice[i - 1, j + 1];
+                countGreen += baseMatrice[i, j - 1];
+                countGreen += baseMatrice[i, j + 1];
+                countGreen += baseMatrice[i + 1, j - 1];
+                countGreen += baseMatrice[i + 1, j];
+                countGreen += baseMatrice[i + 1, j + 1];
                 CheckChangeAndResetCount(i, j);
             }
 
             //verificação ultimo elemento/lines internas
             if (i != 0 && i != lines - 1 && j == columns - 1)
             {
-                 countGreen += baseMatrice[i - 1, j];
-
-                 countGreen += baseMatrice[i - 1, j - 1];
-
-                 countGreen += baseMatrice[i, j-1];
-
-                 countGreen += baseMatrice[i+1, j-1];
-
-                 countGreen += baseMatrice[i+1, j];
-
+                countGreen += baseMatrice[i - 1, j];
+                countGreen += baseMatrice[i - 1, j - 1];
+                countGreen += baseMatrice[i, j - 1];
+                countGreen += baseMatrice[i + 1, j - 1];
+                countGreen += baseMatrice[i + 1, j];
                 CheckChangeAndResetCount(i, j);
             }
             #endregion
 
             #region last line
             //verificação primeiro elemento/ultima linha
-            if (i == lines - 1 && j.Equals(0))
+            if (i == lines - 1 && j == 0 && !Found)
             {
-                 countGreen += baseMatrice[i - 1, j];
-
-                 countGreen += baseMatrice[i - 1, j+1];
-
-                 countGreen += baseMatrice[i, j+1];
-
+                countGreen += baseMatrice[i - 1, j];
+                countGreen += baseMatrice[i - 1, j + 1];
+                countGreen += baseMatrice[i, j + 1];
                 CheckChangeAndResetCount(i, j);
             }
 
             //verificação segundo elemento(ateh penultino)/ultima linha
             if (i == lines - 1 && j != 0 && j != columns - 1)
             {
-                 countGreen += baseMatrice[i, j-1];
-
-                 countGreen += baseMatrice[i - 1, j - 1];
-
-                 countGreen += baseMatrice[i - 1, j];
-
-                 countGreen += baseMatrice[i - 1, j+1];
-
-                 countGreen += baseMatrice[i, j+1];
-
+                countGreen += baseMatrice[i, j - 1];
+                countGreen += baseMatrice[i - 1, j - 1];
+                countGreen += baseMatrice[i - 1, j];
+                countGreen += baseMatrice[i - 1, j + 1];
+                countGreen += baseMatrice[i, j + 1];
                 CheckChangeAndResetCount(i, j);
             }
             #endregion
         }
-
     }
-
 }
-bool TryPath()
+
+async void TryPath()
 {
-    //item1 eh posicao anterior, item2 eh posicao atual, item3 é o movimento e item4 eh o item2 em tostring
-    var listPositionStepTmp = new List<(int[,], int[,], string,string)>();
+    //item1 eh posicao anterior, item2 eh posicao atual, item3 é o movimento
     foreach (var t in listPositionSteps)
     {
 
-        int i = t.Item2[0,0];
-        int j = t.Item2[0,1];
-        int[,] lastPosition = { { i, j } };
+        int i = t.End.Item1;
+        int j = t.End.Item2;
 
         #region primeira linha
+
         //verificação primeiro elemento/primeira linha
-        if (i.Equals(0) && j.Equals(0))
+        if (i == 0 && j == 0 && !Found)
         {
 
-            if (baseMatrice[i + 1, j].Equals(0))
+            if (baseMatrice[i + 1, j] == 0 && !Found)
             {
-                AddRoute(i, j, "D", listPositionStepTmp);
-            }
+                AddRoute(i, j, "D");
+            }            
 
-            if (baseMatrice[i, j + 1].Equals(0))
+            if (baseMatrice[i, j + 1] == 0 && !Found)
             {
-                AddRoute(i, j, "R", listPositionStepTmp);
+                AddRoute(i, j, "R");
             }
         }
 
         //verificação segundo elemento(ateh penultino)/primeira linha
-        if (i.Equals(0) && j != 0 && j != columns - 1)
+        if (i == 0 && j != 0 && j != columns - 1 && !Found)
         {
-            int[,] posicaoNova = {{ i, j }};
-
-            if (baseMatrice[i + 1, j].Equals(0))
+            
+            if (baseMatrice[i + 1, j] == 0 && !Found)
             {
-                AddRoute(i, j, "D", listPositionStepTmp);
+                AddRoute(i, j, "D");
             }
 
-            if (baseMatrice[i, j + 1].Equals(0))
+            if (baseMatrice[i, j + 1] == 0 && !Found)
             {
-                AddRoute(i, j, "R", listPositionStepTmp);
+                AddRoute(i, j, "R");
             }
 
-            if (baseMatrice[i, j - 1].Equals(0))
+            if (baseMatrice[i, j - 1] == 0 && !Found)
             {
-                AddRoute(i, j, "L", listPositionStepTmp);
+                AddRoute(i, j, "L");
             }
         }
 
         //verificação ultimo elemento/primeira linha
-        if (i.Equals(0) && j == columns - 1)
+        if (i == 0 && j == columns - 1 && !Found)
         {
-            int[,] posicaoNova = {{ i, j }};
 
-            if (baseMatrice[i + 1, j].Equals(0))
+            if (baseMatrice[i + 1, j] == 0 && !Found)
             {
-                AddRoute(i, j, "D", listPositionStepTmp);
+                AddRoute(i, j, "D");
             }
 
-            if (baseMatrice[i, j - 1].Equals(0))
+            if (baseMatrice[i, j - 1] == 0 && !Found)
             {
-                AddRoute(i, j, "L", listPositionStepTmp);
+                AddRoute(i, j, "L");
             }
         }
         #endregion
 
         #region lines do meio
         //verificação primeiro elemento/lines internas
-        if (i != 0 && i != lines - 1 && j.Equals(0))
+        if (i != 0 && i != lines - 1 && j == 0 && !Found)
         {
-            int[,] posicaoNova = {{ i, j }};
 
-            if (baseMatrice[i + 1, j].Equals(0))
+            if (baseMatrice[i + 1, j] == 0 && !Found)
             {
-                AddRoute(i, j, "D", listPositionStepTmp);
+                AddRoute(i, j, "D");
             }
 
-            if (baseMatrice[i - 1, j].Equals(0))
+            if (baseMatrice[i - 1, j] == 0 && !Found)
             {
-                AddRoute(i, j, "U", listPositionStepTmp);
+                AddRoute(i, j, "U");
             }
 
-
-            if (baseMatrice[i, j + 1].Equals(0))
+            if (baseMatrice[i, j + 1] == 0 && !Found)
             {
-                AddRoute(i, j, "R", listPositionStepTmp);
+                AddRoute(i, j, "R");
             }
         }
 
         //verificação segundo elemento(ateh penultino)/lines internas
-        if (i != 0 && i != lines - 1 && j != 0 && j != columns - 1)
+        if (i != 0 && i != lines - 1 && j != 0 && j != columns - 1 && !Found)
         {
 
-            if (baseMatrice[i - 1, j].Equals(0))
+            if (baseMatrice[i - 1, j] == 0 && !Found)
             {
-                int[,] posicaoNova = {{ i, j }};
-                posicaoNova[0,0] = i - 1;
-                posicaoNova[0,1] = j;
-                var positionCheck = posicaoNova[0,0] + "," + posicaoNova[0,1];
-                listPositionStepTmp.Add((lastPosition, posicaoNova, "U", positionCheck));
+                AddRoute(i, j, "U");
             }
 
-            if (baseMatrice[i, j + 1].Equals(0))
+            if (baseMatrice[i, j + 1] == 0 && !Found)
             {
-                int[,] posicaoNova = {{ i, j }};
-                posicaoNova[0,0] = i;
-                posicaoNova[0,1] = j + 1;
-                var positionCheck = posicaoNova[0,0] + "," + posicaoNova[0,1];
-                listPositionStepTmp.Add((lastPosition, posicaoNova, "R", positionCheck));
+                AddRoute(i, j, "R");
             }
 
-            if (baseMatrice[i + 1, j].Equals(0))
+            if (baseMatrice[i + 1, j] == 0 && !Found)
             {
-                int[,] posicaoNova = {{ i, j }};
-                posicaoNova[0,0] = i + 1;
-                posicaoNova[0,1] = j;
-                //lastPosition.Append(0);
-                var positionCheck = posicaoNova[0,0] + "," + posicaoNova[0,1];
-                listPositionStepTmp.Add((lastPosition, posicaoNova, "D", positionCheck));
+                AddRoute(i, j, "D");
             }
 
-            if (baseMatrice[i, j - 1].Equals(0))
+            if (baseMatrice[i, j - 1] == 0 && !Found)
             {
-                int[,] posicaoNova = {{ i, j }};
-                posicaoNova[0,0] = i;
-                posicaoNova[0,1] = j - 1;
-                //lastPosition.Append(0);
-                var positionCheck = posicaoNova[0,0] + "," + posicaoNova[0,1];
-                listPositionStepTmp.Add((lastPosition, posicaoNova, "L", positionCheck));
+                AddRoute(i, j, "L");
             }
 
         }
 
         //verificação ultimo elemento/lines internas
-        if (i != 0 && i != lines - 1 && j == columns - 1)
+        if (i != 0 && i != lines - 1 && j == columns - 1 && !Found)
         {
-            int[,] posicaoNova = {{ i, j }};
-            if (baseMatrice[i - 1, j].Equals(0))
+            if (baseMatrice[i - 1, j] == 0 && !Found)
             {
-                AddRoute(i, j, "U", listPositionStepTmp);
+                AddRoute(i, j, "U");
             }
 
-            if (baseMatrice[i, j - 1].Equals(0))
+            if (baseMatrice[i, j - 1] == 0 && !Found)
             {
-                AddRoute(i, j, "L", listPositionStepTmp);
+                AddRoute(i, j, "L");
             }
 
-            if (baseMatrice[i + 1, j].Equals(0))
+            if (baseMatrice[i + 1, j] == 0 && !Found)
             {
-                AddRoute(i, j, "D", listPositionStepTmp);
+                AddRoute(i, j, "D");
             }
         }
         #endregion
 
         #region ultima linha
         //verificação primeiro elemento/ultima linha
-        if (i == lines - 1 && j.Equals(0))
+        if (i == lines - 1 && j == 0 && !Found)
         {
-            int[,] posicaoNova = {{ i, j }};
-            if (baseMatrice[i - 1, j].Equals(0))
+            if (baseMatrice[i - 1, j] == 0 && !Found)
             {
-                AddRoute(i, j, "U", listPositionStepTmp);
+                AddRoute(i, j, "U");
             }
 
-            if (baseMatrice[i, j + 1].Equals(0))
+            if (baseMatrice[i, j + 1] == 0 && !Found)
             {
-                AddRoute(i, j, "R", listPositionStepTmp);
+                AddRoute(i, j, "R");
             }
         }
 
         //verificação segundo elemento(ateh penultino)/ultima linha
-        if (i == lines - 1 && j != 0 && j != columns - 1)
+        if (i == lines - 1 && j != 0 && j != columns - 1 && !Found)
         {
 
-            int[,] posicaoNova = {{ i, j }};
-            if (baseMatrice[i, j - 1].Equals(0))
+            if (baseMatrice[i, j - 1] == 0 && !Found)
             {
-                AddRoute(i, j, "L", listPositionStepTmp);
+                AddRoute(i, j, "L");
             }
 
-            if (baseMatrice[i - 1, j].Equals(0))
+            if (baseMatrice[i - 1, j] == 0 && !Found)
             {
-                posicaoNova[0,0] = i - 1;
-                posicaoNova[0,1] = j;
-                var positionCheck = posicaoNova[0,0] + "," + posicaoNova[0,1];
-                listPositionStepTmp.Add((lastPosition, posicaoNova, "U", positionCheck));
+                AddRoute(i, j, "U");
             }
 
-            if (baseMatrice[i, j + 1].Equals(0))
+            if (baseMatrice[i, j + 1] == 0 && !Found)
             {
-                posicaoNova[0,0] = i;
-                posicaoNova[0,1] = j + 1;
-                var positionCheck = posicaoNova[0,0] + "," + posicaoNova[0,1];
-                listPositionStepTmp.Add((lastPosition, posicaoNova, "R", positionCheck));
+                AddRoute(i, j, "R");
             }
+
         }
-
         #endregion
     }
-    HashSet<(int[,], int[,],string, string)> distinctSet = new HashSet<(int[,], int[,],string, string)>(new TupleEqualityComparer());
-
-    foreach (var position in listPositionStepTmp)
-    {
-        distinctSet.Add(position);
-    }
-
-    List<(int[,], int[,],string, string)> distinctList = distinctSet.ToList(); 
-
-    listPositionSteps = distinctList;
+    if (listPositionStepTmp.Count == 0) DeadEnd = true;
+    listPositionSteps = listPositionStepTmp.ToList();
     listAllPositionSteps.Add(listPositionSteps);
-    foreach (var SuccessTestLoop in listAllPositionSteps.Last())
-    {
-        if (SuccessTestLoop.Item4 == $"{lines - 1},{columns - 1}")
-       {
-            StringBuilder route = new StringBuilder();
-            int lastIndex = 0;
-            for (int i = listAllPositionSteps.Count - 1; i >= 0; i--)
-            {
-                for(int j = listAllPositionSteps[i].Count - 1; j>=0; j--)
-                {
-                    if (listAllPositionSteps[i][j].Item4 == $"{lines - 1},{columns - 1}")
-                    {
-                        route.Append(listAllPositionSteps[i][j].Item3);
-                        lastIndex = j;
-                        break;
-                    }
-                    if (listAllPositionSteps[i + 1][lastIndex].Item1[0,0] == (listAllPositionSteps[i][j].Item2[0,0]) && 
-                        listAllPositionSteps[i + 1][lastIndex].Item1[0, 1] == listAllPositionSteps[i][j].Item2[0, 1])
-                    {
-                        route.Append(" "+listAllPositionSteps[i][j].Item3);
-                        lastIndex = j;
-                        break;
-                    }
-                }
-            }
-            Console.WriteLine($"{loopCounter + 1} Steps to found a solution\r\n");
-           
-            char[] arr = route.ToString().ToCharArray();
-            Array.Reverse(arr);
-            Console.WriteLine("Steps:");
-            Console.WriteLine(arr);
-            return true;
-        }
-    }
+    listPositionStepTmp.Clear();
     loopCounter++;
-    return false;
 }
 void CheckChangeAndResetCount(int i, int j)
 {
-    if (baseMatrice[i, j] == 0 && countGreen > 1 && countGreen < 5) tempMatrice.SetValue(1, i, j);
-    if (baseMatrice[i, j] == 0 && countGreen <= 1 && countGreen >= 5) tempMatrice.SetValue(0,i, j);
-    if (baseMatrice[i, j] == 1 && countGreen <= 3 && countGreen >= 6) tempMatrice.SetValue(0, i, j);
-    if (baseMatrice[i, j] == 1 && countGreen > 3 && countGreen < 6) tempMatrice.SetValue(1, i, j);
+    if (baseMatrice[i, j] == 0)
+    {
+        if (countGreen > 1 && countGreen < 5) tempMatrice[i, j] = 1;
+        else if (countGreen <= 1 || countGreen >= 5) tempMatrice[i, j] = 0;
+    }
+    else // baseMatrice[i, j] == 1
+    {
+        if (countGreen <= 3 || countGreen >= 6) tempMatrice[i, j] = 0;
+        else if (countGreen > 3 && countGreen < 6) tempMatrice[i, j] = 1;
+    }
     countGreen = 0;
 }
+
 //void printMatrix(int[,] matrix, string name)
 //{
 //    Console.Write(name + "\n");
@@ -464,30 +389,79 @@ void CheckChangeAndResetCount(int i, int j)
 //    Console.Write("\n");
 
 //}
-void AddRoute(int i, int j, string route, List<(int[,], int[,], string,string)> listaPosition)
+void AddRoute(int i, int j, string route)
 {
-    int[,] lastPosition = { { i, j } };
-
-    if (baseMatrice[i, j].Equals(0))
+    var lastPosition = (i, j);
+    var newPosition = (i, j);
+    switch (route)
     {
-        int[,] newPosition = { { i, j } };
-        newPosition[0, 0] += (route == "D") ? 1 : (route== "R" || route == "L") ? 0 : -1;
-        newPosition[0, 1] += (route == "R") ? 1 : (route == "U" || route == "D") ? 0 : -1;
-        StringBuilder positionCheck = new StringBuilder();
-        positionCheck.Append(newPosition[0, 0]).Append(",").Append(newPosition[0, 1]);
-        var tuple = (lastPosition, newPosition, route, positionCheck.ToString());
-        listaPosition.Add(tuple);        
+        case "D":
+            newPosition.i += 1;
+            break;
+        case "R":
+            newPosition.j += 1;
+            break;
+        case "L":
+            newPosition.j -= 1;
+            break;
+        case "U":
+            newPosition.i -= 1;
+            break;
+    }
+    var tuple = new PositionStep(lastPosition, newPosition, route);
+    listPositionStepTmp.Add(tuple);
+    if (newPosition == Goal) Found = true;
+}
+
+async void GetPath()
+{
+    for (int i = listAllPositionSteps.Count - 1; i >= 0; i--)
+    {
+        for (int j = listAllPositionSteps[i].Count - 1; j >= 0; j--)
+        {
+            if (listAllPositionSteps[i][j].End == Goal)
+            {
+                route +=listAllPositionSteps[i][j].Step;
+                lastIndex = j;
+                break;
+            }
+            if (listAllPositionSteps[i + 1][lastIndex].Start == listAllPositionSteps[i][j].End)
+            {
+                route+=" " + listAllPositionSteps[i][j].Step;
+                lastIndex = j;
+                break;
+            }
+        }
+    }
+    Console.WriteLine($"{loopCounter} Steps to found a solution\r\n");
+
+    char[] arr = route.ToString().ToCharArray();
+    Array.Reverse(arr);
+    Console.WriteLine("Steps:");
+    Console.WriteLine(arr);
+}
+public class TupleEqualityComparer : IEqualityComparer<PositionStep>
+{
+    public bool Equals(PositionStep x, PositionStep y)
+    {
+        return x.End.Equals(y.End);
+    }
+
+    public int GetHashCode(PositionStep obj)
+    {
+        return obj.End.GetHashCode();
     }
 }
-public class TupleEqualityComparer : IEqualityComparer<(int[,], int[,], string,string)>
+public struct PositionStep
 {
-    public bool Equals((int[,], int[,], string,string) x, (int[,], int[,], string,string) y)
-    {
-        return x.Item4.Equals(y.Item4);
-    }
+    public (int, int) Start { get; set; }
+    public (int, int) End { get; set; }
+    public string Step { get; set; }
 
-    public int GetHashCode((int[,], int[,], string,string) obj)
+    public PositionStep((int, int) start, (int, int) end, string step)
     {
-        return obj.Item4.GetHashCode();
+        Start = start;
+        End = end;
+        Step = step;
     }
 }
