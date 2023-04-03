@@ -329,7 +329,7 @@ void AddRoute(int i, int j, string route)
 
 void ReadFileToMatrix()
 {
-    using (FileStream fileStream = new FileStream("C:\\Users\\felip\\OneDrive\\Área de Trabalho\\input2.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+    using (FileStream fileStream = new FileStream("C:\\Users\\felip\\OneDrive\\Área de Trabalho\\input.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
     //using (FileStream fileStream = new FileStream("C:\\Users\\felip\\OneDrive\\Área de Trabalho\\input sigma 3.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
     {
         // Construct the input string
