@@ -11,28 +11,32 @@ bool DeadEnd = false;
 bool Found = false;
 int lastIndex = 0;
 int loopCounter = 0;
+int countDeadEnd = 0;
 
-List<List<PositionStep>> listAllPositionSteps = new List<List<PositionStep>>();
+
 string route = string.Empty;
 HashSet<PositionStep> listPositionStepTmp = new HashSet<PositionStep>(new TupleEqualityComparer());
-
+List <(int,int)> teste = new List<(int,int)>();
 
 #endregion
 
 #region Setup Data Set
 
-int[][] baseMatrice;
+uint[][] baseMatrice;
 ReadFileToMatrix();
-List<PositionStep> listPositionSteps = new List<PositionStep>()
+List<List<PositionStep>> listAllPositionSteps = new List<List<PositionStep>>()
 {
-    new PositionStep{End = Start,Start=Start, Step = string.Empty}
+    new List<PositionStep>()
+    {
+        new PositionStep{End = Start,Start=Start, Step = string.Empty}
+    }
 };
 int lines;
 int columns;
-int[][] tempMatrice = new int[lines + 2][];
+uint[][] tempMatrice = new uint[lines + 2][];
 for (int i = 0; i < baseMatrice.Length; i++)
 {
-    tempMatrice[i] = new int[columns + 2];
+    tempMatrice[i] = new uint[columns + 2];
 }
 
 #endregion
@@ -46,10 +50,10 @@ while (!Found && !DeadEnd)
     tempMatrice[Goal.Item1][Goal.Item2] = 0;
     baseMatrice = tempMatrice;
     TryPath();
-    tempMatrice = new int[lines + 2][];
+    tempMatrice = new uint[lines + 2][];
     for (int i = 0; i < baseMatrice.Length; i++)
     {
-        tempMatrice[i] = new int[columns + 2];
+        tempMatrice[i] = new uint[columns + 2];
     }
 }
 if (DeadEnd) Console.WriteLine("No Paths Available!");
@@ -93,7 +97,7 @@ void StepExecute()
     {
         for (int j = 1; j <= columns; j++)
         {
-            int countGreen = baseMatrice[i - 1][j - 1]+ baseMatrice[i - 1][j]+baseMatrice[i - 1][j + 1]+baseMatrice[i][j - 1]+baseMatrice[i][j + 1]+baseMatrice[i + 1][j - 1]+baseMatrice[i + 1][j]+baseMatrice[i + 1][j + 1];
+            uint countGreen = baseMatrice[i - 1][j - 1]+ baseMatrice[i - 1][j]+baseMatrice[i - 1][j + 1]+baseMatrice[i][j - 1]+baseMatrice[i][j + 1]+baseMatrice[i + 1][j - 1]+baseMatrice[i + 1][j]+baseMatrice[i + 1][j + 1];
             if (baseMatrice[i][j] == 0)
             {
                 if (countGreen > 1 && countGreen < 5) tempMatrice[i][j] = 1;
@@ -111,7 +115,7 @@ void StepExecute()
 void TryPath()
 {
     //item1 eh posicao anterior, item2 eh posicao atual, item3 é o movimento
-    listPositionSteps.ForEach(t =>
+    listAllPositionSteps[loopCounter].ForEach(t =>
     {
 
         int i = t.End.Item1;
@@ -119,10 +123,10 @@ void TryPath()
 
         #region primeira linha
 
-        int down = baseMatrice[i + 1][j];
-        int up = baseMatrice[i - 1][j];
-        int left = baseMatrice[i][j-1];
-        int right = baseMatrice[i][j+1];
+        uint down = baseMatrice[i + 1][j];
+        uint up = baseMatrice[i - 1][j];
+        uint left = baseMatrice[i][j-1];
+        uint right = baseMatrice[i][j+1];
         //verificação primeiro elemento/primeira linha
         if (i == 1 && j == 1)
         {
@@ -277,10 +281,33 @@ void TryPath()
 
         }
         #endregion
+        if (countDeadEnd == 0)
+        {
+            teste.Add((i, j));
+        }
+        countDeadEnd= 0;
+
     });
+    teste.ForEach(x =>
+    {
+        (int, int) lastIndex1 = x;
+        for (int q = listAllPositionSteps.Count - 1; q >= 0; q--)
+        {
+            for (int w = listAllPositionSteps[q].Count - 1; w >= 0; w--)
+            {
+
+                if (listAllPositionSteps[q][w].End == lastIndex1)
+                {
+                    lastIndex1 = listAllPositionSteps[q][w].Start;
+                    listAllPositionSteps[q].RemoveAt(w);
+                    return;
+                }
+            }
+        }
+    });
+    teste.Clear();
     DeadEnd = listPositionStepTmp?.Count == 0;
-    listPositionSteps = listPositionStepTmp.ToList();
-    listAllPositionSteps.Add(listPositionSteps);
+    listAllPositionSteps.Add(listPositionStepTmp.ToList());
     listPositionStepTmp.Clear();
     loopCounter++;
 }
@@ -323,6 +350,7 @@ void AddRoute(int i, int j, string route)
             break;
     }
     var tuple = new PositionStep { End = newPosition, Start = lastPosition, Step = route };
+    countDeadEnd++;
     listPositionStepTmp.Add(tuple);
     Found = newPosition == Goal;
 }
@@ -349,10 +377,10 @@ void ReadFileToMatrix()
         lines = FileLines.Length;
 
         // Create new jagged array with border
-        baseMatrice = new int[lines + 2][];
+        baseMatrice = new uint[lines + 2][];
         for (int i = 0; i < baseMatrice.Length; i++)
         {
-            baseMatrice[i] = new int[columns + 2];
+            baseMatrice[i] = new uint[columns + 2];
         }
 
         // Read and parse lines
@@ -361,7 +389,7 @@ void ReadFileToMatrix()
             string[] values = FileLines[row - 1].Split(' ');
             for (int col = 1; col <= columns; col++)
             {
-                if (int.TryParse(values[col - 1], NumberStyles.None, CultureInfo.InvariantCulture, out int value))
+                if (uint.TryParse(values[col - 1], NumberStyles.None, CultureInfo.InvariantCulture, out uint value))
                 {
                     baseMatrice[row][col] = value;
                     if (value == 3) Start = (row, col);
