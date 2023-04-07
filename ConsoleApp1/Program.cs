@@ -1,37 +1,27 @@
-﻿//using ConsoleApp1;
-using System.Collections;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+
 
 var watch = new Stopwatch();
 watch.Start();
 
 #region Global Variables
-(uint, uint) Goal = (0, 0);
-(uint, uint) Start = (0, 0);
+(int, int) Goal = (0, 0);
+(int, int) Start = (0, 0);
 bool DeadEnd = false;
 bool Found = false;
-int lastIndex = 0;
 int loopCounter = 0;
-ArrayList route = new ArrayList();
-//StringBuilder route = new StringBuilder();
-
-HashSet<PositionStep> listPositionStepTmp = new HashSet<PositionStep>(new TupleEqualityComparer());
-
+HashSet<PositionStep> listRodada = new(new TupleEqualityComparer());
+Stack<PositionStep> stack = new Stack<PositionStep>();
 #endregion
 
 #region Setup Data Set
 
-uint[][] baseMatrice;
+int[][] baseMatrice;
 ReadFileToMatrix();
-List<List<PositionStep>> listAllPositionSteps = new List<List<PositionStep>>()
-{
-    new List<PositionStep>()
-    {
-        new PositionStep{End = Start,Start=Start, Step = '\0'}
-    }
-};
+
+stack.Push(new PositionStep { End = Start, Start = Start, Step = '\0', Parent = null });
 int lines;
 int columns;
 uint[][] tempMatrice = new uint[baseMatrice.Length][];
@@ -51,22 +41,16 @@ while (!Found && !DeadEnd)
     CheckChanges();
     baseMatrice[Start.Item1][Start.Item2] = 0;
     baseMatrice[Goal.Item1][Goal.Item2] = 0;
-    //printMatrix(baseMatrice, "vai");
     TryPath();
+    //Console.WriteLine(loopCounter);
 }
-if (DeadEnd) 
-{ 
-    Console.WriteLine("No Paths Available!"); 
+if (DeadEnd)
+{
+    Console.WriteLine("No Paths Available!");
 }
 else
 {
-    GetPath();
-    Console.WriteLine($"{loopCounter} Steps to found a solution\r\n");
-    route.Remove('\0');
-    route.Reverse();
-    Console.WriteLine("Steps:");
-
-    Console.WriteLine(string.Join(" ", route.ToArray()));
+    GetPathNew();
 }
 watch.Stop();
 TimeSpan ts = watch.Elapsed;
@@ -74,7 +58,7 @@ Console.WriteLine($"\r\nExecution Time: {ts.TotalMinutes} minutes and {ts.TotalM
 
 
 //Methods
-void GetPath()
+/*void GetPath()
 {
     for (int i = listAllPositionSteps.Count - 1; i >= 0; i--)
     {
@@ -94,7 +78,33 @@ void GetPath()
             }
         }
     }
+}*/
+
+void GetPathNew()
+{
+    Console.WriteLine("Steps:");
+
+    Stack<char> sb = new Stack<char>();
+    //while (stack.Count > 0)
+    //{
+    PositionStep step = stack.Pop();
+    //PositionStep? currentStep = step;
+    while (step?.Parent != null)
+    {
+        sb.Push(step.Step);
+        step = step.Parent;
+    }
+    //break;
+    //}
+
+    var EndRoute = sb.ToArray();
+    //Array.Reverse(EndRoute);
+    Console.WriteLine(string.Join(' ', EndRoute));
+    Console.WriteLine($"{loopCounter} Steps to found a solution\r\n");
+
 }
+
+
 void StepExecute()
 {
     //tempMatrice = baseMatrice;
@@ -135,21 +145,29 @@ void CheckChanges()
 }
 void TryPath()
 {
-    listAllPositionSteps[loopCounter].ForEach(t =>
+    while (stack.Count > 0)
     {
-        if (baseMatrice[t.End.Item1][t.End.Item2 - 1] == 0 && !Found) AddRoute(t.End, 'L');
+        PositionStep loopStack = stack.Pop();
+        if (baseMatrice[loopStack.End.Item1][loopStack.End.Item2 - 1] == 0) AddRoute(loopStack, loopStack.End, 'L');
 
-        if (baseMatrice[t.End.Item1 - 1][t.End.Item2] == 0 && !Found) AddRoute(t.End, 'U');
+        if (baseMatrice[loopStack.End.Item1 - 1][loopStack.End.Item2] == 0) AddRoute(loopStack, loopStack.End, 'U');
 
-        if (baseMatrice[t.End.Item1][t.End.Item2 + 1] == 0 && !Found) AddRoute(t.End, 'R');
+        if (baseMatrice[loopStack.End.Item1][loopStack.End.Item2 + 1] == 0) AddRoute(loopStack, loopStack.End, 'R');
 
-        if (baseMatrice[t.End.Item1 + 1][t.End.Item2] == 0 && !Found) AddRoute(t.End, 'D');
-    });
-
-    DeadEnd = listPositionStepTmp.Count == 0;
-    listAllPositionSteps.Add(listPositionStepTmp.ToList());
-    listPositionStepTmp.Clear();
-    //Console.WriteLine(loopCounter);
+        if (baseMatrice[loopStack.End.Item1 + 1][loopStack.End.Item2] == 0) AddRoute(loopStack, loopStack.End, 'D');
+    }
+    foreach (var i in listRodada)
+    {
+        if(i.End == (Goal))
+        {
+            stack.Push(i);
+            Found= true;
+            break;
+        }
+        stack.Push(i);
+    };
+    //DeadEnd = listRodada.Count == 0;
+    listRodada.Clear();
     loopCounter++;
 }
 void printMatrix(int[][] matrix, string name)
@@ -170,9 +188,8 @@ void printMatrix(int[][] matrix, string name)
     Console.Write("\n");
 
 }
-void AddRoute((uint, uint) lastPosition, char route)
+void AddRoute(PositionStep parent, (int, int) lastPosition, char route)
 {
-    //var lastPosition = j;
     var newPosition = lastPosition;
     switch (route)
     {
@@ -189,9 +206,18 @@ void AddRoute((uint, uint) lastPosition, char route)
             newPosition.Item1 -= 1;
             break;
     }
-    var tuple = new PositionStep { End = newPosition, Start = lastPosition, Step = route };
-    listPositionStepTmp.Add(tuple);
-    Found = newPosition == Goal;
+    listRodada.Add(new PositionStep { End = newPosition, Start = lastPosition, Step = route, Parent = parent });
+
+    //countDeadEnd++;
+    //Found = newPosition == Goal;
+    //if (newPosition == Goal)
+    //{
+    //    Found = true;
+    //    PositionStep lastElement = listRodada.Last();
+    //    listRodada.Clear();
+    //    stack.Clear();
+    //    stack.Push(lastElement);
+    //}
 }
 void ReadFileToMatrix()
 {
@@ -216,19 +242,19 @@ void ReadFileToMatrix()
         lines = FileLines.Length;
 
         // Create new jagged array with border
-        baseMatrice = new uint[lines + 2][];
-        for (uint i = 0; i < baseMatrice.Length; i++)
+        baseMatrice = new int[lines + 2][];
+        for (int i = 0; i < baseMatrice.Length; i++)
         {
-            baseMatrice[i] = new uint[columns + 2];
+            baseMatrice[i] = new int[columns + 2];
         }
 
         // Read and parse lines
-        for (uint row = 1; row <= lines; row++)
+        for (int row = 1; row <= lines; row++)
         {
             string[] values = FileLines[row - 1].Trim().Split(' ');
-            for (uint col = 1; col <= columns; col++)
+            for (int col = 1; col <= columns; col++)
             {
-                if (uint.TryParse(values[col - 1], NumberStyles.None, CultureInfo.InvariantCulture, out uint value))
+                if (int.TryParse(values[col - 1], NumberStyles.None, CultureInfo.InvariantCulture, out int value))
                 {
                     baseMatrice[row][col] = value;
                     if (value == 3) Start = (row, col);
@@ -236,7 +262,7 @@ void ReadFileToMatrix()
                 }
             }
         }
-        for (uint j = 0; j <= columns + 1; j++)
+        for (int j = 0; j <= columns + 1; j++)
         {
             baseMatrice[0][j] = 1; // top border
             baseMatrice[lines + 1][j] = 1; // bottom border
@@ -253,7 +279,7 @@ void ReadFileToMatrix()
     PathTest teste= PathTest.Default;
     int i = 1, j = 1;
     (int, int) posicao = (i, j);
-
+    int countt = 0;
     foreach (var rota in teste.PathChallenge1)
     {
         StepExecute();
@@ -325,9 +351,11 @@ void ReadFileToMatrix()
                 break;
             }
         }
-        baseMatrice[posicao.Item1][posicao.Item2] = 5;
+        countt++;
+        baseMatrice[posicao.Item1][posicao.Item2] = 0;
         //printMatrix(baseMatrice, "matrix movimentada");
         baseMatrice[posicao.Item1][posicao.Item2] = 0;
+
     }
     if (i == 99)
     {
@@ -347,9 +375,10 @@ public class TupleEqualityComparer : IEqualityComparer<PositionStep>
         return obj.End.GetHashCode();
     }
 }
-public struct PositionStep
+public class PositionStep
 {
-    public (uint, uint) Start { get; set; }
-    public (uint, uint) End { get; set; }
+    public (int, int) Start { get; set; }
+    public (int, int) End { get; set; }
     public char Step { get; set; }
+    public PositionStep? Parent { get; set; }
 }
