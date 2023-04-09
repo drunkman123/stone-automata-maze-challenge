@@ -12,9 +12,10 @@ watch.Start();
 (int, int) Start = (0, 0);
 bool DeadEnd = false;
 bool Found = false;
+int Foundid = 0;
 int loopCounter = 0;
-Stack<PositionStep> stack = new Stack<PositionStep>();
-HashSet<PositionStep> listRodada = new(new TupleEqualityComparer());
+int newIndex = 0;
+//Stack<PositionStep> stack = new Stack<PositionStep>(52000);
 
 #endregion
 
@@ -22,10 +23,17 @@ HashSet<PositionStep> listRodada = new(new TupleEqualityComparer());
 
 int[][] baseMatrice;
 ReadFileToMatrix();
+int diagonal = (int)(Math.Sqrt(Math.Pow(Goal.Item1 + 1, 2) + Math.Pow(Goal.Item2 + 1, 2)) * 1.5);
 
-stack.Push(new PositionStep(Start.Item1, Start.Item2, '\0', null));
+
 int lines;
 int columns;
+int lengthTotal = lines*columns;
+PositionStep?[] positionSteps = new PositionStep?[lengthTotal];
+List<int> toBeAddedIndex = new List<int>(lengthTotal);
+List<PositionStep> listRodada = new List<PositionStep>(lengthTotal / 4);
+//stack.Push(new PositionStep(Start.Item1, Start.Item2, '\0', null));
+listRodada.Add(new PositionStep(Start.Item1, Start.Item2, '\0', null, 1));
 int[][] tempMatrice = new int[baseMatrice.Length][];
 for (int i = 0; i < baseMatrice.Length; i++)
 {
@@ -69,7 +77,7 @@ void GetPathNew()
     Stack<char> sb = new Stack<char>();
     //while (stack.Count > 0)
     //{
-    PositionStep step = stack.Pop();
+    PositionStep step = listRodada.Last();
     //PositionStep? currentStep = step;
     while (step?.Parent != null)
     {
@@ -128,33 +136,110 @@ void CheckChanges()
 void TryPath()
 {
 
-    while (stack.Count > 0)
-    {
-        PositionStep loopStack = stack.Pop();
-        if (baseMatrice[loopStack.item1][loopStack.item2 - 1] == 0) listRodada.Add(new PositionStep(loopStack.item1, loopStack.item2 - 1, 'L', loopStack));
+    //while (stack.Count > 0)
+    //{
+    //    PositionStep loopStack = stack.Pop();
+    //    if (baseMatrice[loopStack.item1][loopStack.item2 - 1] == 0) listRodada.Add(new PositionStep(loopStack.item1, loopStack.item2 - 1, 'L', loopStack));
 
-        if (baseMatrice[loopStack.item1 - 1][loopStack.item2] == 0) listRodada.Add(new PositionStep(loopStack.item1 - 1, loopStack.item2, 'U', loopStack));
+    //    if (baseMatrice[loopStack.item1 - 1][loopStack.item2] == 0) listRodada.Add(new PositionStep(loopStack.item1 - 1, loopStack.item2, 'U', loopStack));
 
-        if (baseMatrice[loopStack.item1][loopStack.item2 + 1] == 0) listRodada.Add(new PositionStep(loopStack.item1, loopStack.item2 + 1, 'R', loopStack));
+    //    if (baseMatrice[loopStack.item1][loopStack.item2 + 1] == 0) listRodada.Add(new PositionStep(loopStack.item1, loopStack.item2 + 1, 'R', loopStack));
 
-        if (baseMatrice[loopStack.item1 + 1][loopStack.item2] == 0) listRodada.Add(new PositionStep(loopStack.item1+1, loopStack.item2, 'D', loopStack));
-    }
+    //    if (baseMatrice[loopStack.item1 + 1][loopStack.item2] == 0) listRodada.Add(new PositionStep(loopStack.item1+1, loopStack.item2, 'D', loopStack));
+    //}
+    //foreach (var i in listRodada)
+    //{
+    //    if (i.item1 == Goal.Item1)
+    //    {
+    //        if (i.item2 == Goal.Item2)
+    //        {
+    //            stack.Push(i);
+    //            Found = true;
+    //            break;
+    //        }
+    //    }
+    //    stack.Push(i);
+    //};
+
+    ////DeadEnd = listRodada.Count == 0;
+    //listRodada.Clear();
+    //loopCounter++;
+
     foreach (var i in listRodada)
     {
-        if (i.item1 == Goal.Item1)
+        if (baseMatrice[i.item1][i.item2 - 1] == 0 && !Found)
         {
-            if (i.item2 == Goal.Item2)
+            newIndex = i.item1 * lines + i.item2 - 1- lines;
+            positionSteps[newIndex] = new PositionStep(i.item1, i.item2 - 1, 'L', i,newIndex);
+            toBeAddedIndex.Add(newIndex);
+        }
+
+        if (baseMatrice[i.item1 - 1][i.item2] == 0 && !Found)
+        {
+            newIndex = (i.item1-1) * lines + i.item2-lines;
+
+            positionSteps[newIndex] = new PositionStep(i.item1 - 1, i.item2, 'U', i, newIndex);
+            toBeAddedIndex.Add(newIndex);
+
+        }
+
+        if (baseMatrice[i.item1][i.item2 + 1] == 0 && !Found)
+        {
+            if ((i.item1, i.item2 + 1) == Goal)
             {
-                stack.Push(i);
+                newIndex = i.item1 * lines + i.item2 + 1-lines;
+                positionSteps[newIndex] = new PositionStep(i.item1, i.item2 + 1, 'R', i, newIndex);
+                toBeAddedIndex.Add(newIndex);
+                Foundid = newIndex;
                 Found = true;
-                break;
+            }
+            else
+            {
+                newIndex = i.item1 * lines + i.item2 + 1-lines;
+                positionSteps[newIndex] = new PositionStep(i.item1, i.item2 + 1, 'R', i, newIndex);
+                toBeAddedIndex.Add(newIndex);
             }
         }
-        stack.Push(i);
-    };
 
-    //DeadEnd = listRodada.Count == 0;
+        if (baseMatrice[i.item1 + 1][i.item2] == 0 && !Found)
+        {
+            if((i.item1 + 1, i.item2) == Goal)
+            {
+                newIndex = (i.item1+1) * lines + i.item2-lines;
+                positionSteps[newIndex] = new PositionStep(i.item1 + 1, i.item2, 'D', i, newIndex);
+                toBeAddedIndex.Add(newIndex);
+                Foundid = newIndex;
+                Found = true;
+            }
+            else
+            {
+                newIndex = (i.item1+1) * lines + i.item2-lines;
+                positionSteps[newIndex] = new PositionStep(i.item1 + 1, i.item2, 'D', i, newIndex);
+                toBeAddedIndex.Add(newIndex);
+            }
+
+        }
+    }
     listRodada.Clear();
+    //toBeAddedIndex = toBeAddedIndex.Distinct().ToList();
+
+    foreach (var index in toBeAddedIndex)
+    {
+        var element = positionSteps[index];
+        if(element != null)
+        {
+            listRodada.Add(element);
+            positionSteps[index] = null;
+        }
+    }
+    if (listRodada.Count > diagonal)
+    {
+        var itens = listRodada.OrderByDescending(c => c.item1 + c.item2).Skip(diagonal).ToArray();
+        foreach (var item in itens)
+            listRodada.Remove(item);
+    }
+    toBeAddedIndex.Clear();
+    //DeadEnd = listRodada.Count == 0;
     loopCounter++;
 }
 void printMatrix(int[][] matrix, string name)
@@ -350,33 +435,36 @@ void ReadFileToMatrix()
     }
 }*/
 
-public class TupleEqualityComparer : IEqualityComparer<PositionStep>
-{
-    public bool Equals(PositionStep x, PositionStep y)
-    {
-        return x.item1.Equals(y.item1) && x.item2.Equals(y.item2);
-    }
+//public class TupleEqualityComparer : IEqualityComparer<PositionStep>
+//{
+//    public bool Equals(PositionStep x, PositionStep y)
+//    {
+//        return x.id.Equals(y.id);
+//    }
 
-    public int GetHashCode(PositionStep obj)
-    {
-        return (obj.item1, obj.item2).GetHashCode();
-    }
-}
+//    public int GetHashCode(PositionStep obj)
+//    {
+//        return obj.id.GetHashCode();
+//    }
+//}
 public class PositionStep
 {
     //public (int,int) end { get; set; }
-    public int item1 { get; set; }
-    public int item2 { get; set; }
-    public char Step { get; set; }
+    public readonly int item1;
+    public readonly int item2;
+    public readonly char Step;
+    public readonly int id;
     public PositionStep? Parent { get; set; }
 
-    public PositionStep(int Item1, int Item2, char step, PositionStep? parent)
+    public PositionStep(int Item1, int Item2, char step, PositionStep? parent, int Id)
     {
         item1 = Item1;
         item2 = Item2;
         Step = step;
         Parent = parent;
+        id = Id;
     }
+
     //public PositionStep((int,int) End, char step, PositionStep? parent)
     //{
     //    end = End;
