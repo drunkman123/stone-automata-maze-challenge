@@ -1,6 +1,7 @@
 ﻿using ConsoleApp1;
 using System.Diagnostics;
 using System.Globalization;
+using System.Numerics;
 using System.Text;
 
 
@@ -28,9 +29,9 @@ int diagonal = (int)(Math.Sqrt(Math.Pow(Goal.Item1 + 1, 2) + Math.Pow(Goal.Item2
 
 int lines;
 int columns;
-int lengthTotal = lines*columns;
-PositionStep?[] positionSteps = new PositionStep?[lengthTotal];
-List<int> toBeAddedIndex = new List<int>(lengthTotal);
+int lengthTotal = lines * columns;
+PositionStep?[] positionSteps = new PositionStep?[lengthTotal + 1];
+List<int> toBeAddedIndex = new List<int>(lengthTotal + 1);
 List<PositionStep> listRodada = new List<PositionStep>(lengthTotal / 4);
 //stack.Push(new PositionStep(Start.Item1, Start.Item2, '\0', null));
 listRodada.Add(new PositionStep(Start.Item1, Start.Item2, '\0', null, 1));
@@ -42,15 +43,21 @@ for (int i = 0; i < baseMatrice.Length; i++)
 baseMatrice[Start.Item1][Start.Item2] = 0;
 baseMatrice[Goal.Item1][Goal.Item2] = 0;
 #endregion
-
+//printMatrix(baseMatrice, "1");
 while (!Found && !DeadEnd)
 {
     //PathTeste(); //descomente o método embaixo e escolha o tipo de input
     //start and goal set to 0 to not mess with the stepexecute
     StepExecute();
-    CheckChanges();
+    //CheckChanges();
+    Array.Copy(tempMatrice, baseMatrice, tempMatrice.Length);
+    for (int i = 0; i < baseMatrice.Length; i++)
+    {
+        tempMatrice[i] = new int[columns + 2];
+    }
     baseMatrice[Start.Item1][Start.Item2] = 0;
     baseMatrice[Goal.Item1][Goal.Item2] = 0;
+    //printMatrix(baseMatrice, "1");
     TryPath();
     //Console.WriteLine(loopCounter);
 }
@@ -77,12 +84,12 @@ void GetPathNew()
     Stack<char> sb = new Stack<char>();
     //while (stack.Count > 0)
     //{
-    PositionStep step = listRodada.Last();
+    //PositionStep step = listRodada.Last();
     //PositionStep? currentStep = step;
-    while (step?.Parent != null)
+    while (listRodada[0]?.Parent != null)
     {
-        sb.Push(step.Step);
-        step = step.Parent;
+        sb.Push(listRodada[0].Step);
+        listRodada[0] = listRodada[0].Parent;
     }
     //break;
     //}
@@ -94,8 +101,30 @@ void GetPathNew()
 
 }
 
-
 void StepExecute()
+{
+    Parallel.For(1, (int)lines + 1, i =>
+    {
+        for (int j = 1; j <= columns; j++)
+        {
+            int countGreen = baseMatrice[i - 1][j - 1] + baseMatrice[i - 1][j] + baseMatrice[i - 1][j + 1] + baseMatrice[i][j - 1] + baseMatrice[i][j + 1] + baseMatrice[i + 1][j - 1] + baseMatrice[i + 1][j] + baseMatrice[i + 1][j + 1];
+            if (baseMatrice[i][j] == 0)
+            {
+                if (countGreen > 1 && countGreen < 5) tempMatrice[i][j] = 1;
+                else { tempMatrice[i][j] = 0; }
+            }
+            else
+            {
+                if (countGreen <= 3 || countGreen >= 6) tempMatrice[i][j] = 0;
+                else { tempMatrice[i][j] = 1; }
+            }
+        }
+    });
+
+}
+
+
+/*void StepExecute()
 {
     //tempMatrice = baseMatrice;
     Parallel.For(1, (int)lines + 1, i =>
@@ -125,14 +154,15 @@ void CheckChanges()
                 baseMatrice[i][j]++;
                 continue;
             }
-            if (baseMatrice[i][j] == 1 && (tempMatrice[i][j] <= 3 || tempMatrice[i][j] >= 6)) baseMatrice[i][j]--;
+            if (baseMatrice[i][j] == 1 && (tempMatrice[i][j] <= 3 || tempMatrice[i][j] >= 6)) 
+                baseMatrice[i][j]--;
         }
     }
     for (int i = 0; i < tempMatrice.Length; i++)
     {
         Array.Clear(tempMatrice[i], 0, tempMatrice[i].Length);
     }
-}
+}*/
 void TryPath()
 {
 
@@ -167,58 +197,67 @@ void TryPath()
 
     foreach (var i in listRodada)
     {
-        if (baseMatrice[i.item1][i.item2 - 1] == 0 && !Found)
+        if (i.item1 == 1 && i.item2 == 1 && !Found)
         {
-            newIndex = i.item1 * lines + i.item2 - 1- lines;
-            positionSteps[newIndex] = new PositionStep(i.item1, i.item2 - 1, 'L', i,newIndex);
-            toBeAddedIndex.Add(newIndex);
+            checkRight(i);
+            checkDown(i);
+            continue;
+        }
+        if (i.item1 == 1 && i.item2 != 1 && i.item2 != columns && !Found)
+        {
+            checkRight(i);
+            checkDown(i);
+            checkLeft(i);
+            continue;
+        }
+        if (i.item1 == 1 && i.item2 == columns && !Found)
+        {
+            checkLeft(i);
+            checkDown(i);
+            continue;
+        }
+        if (i.item1 != 1 && i.item1 != lines && i.item2 == 1 && !Found)
+        {
+            checkRight(i);
+            checkDown(i);
+            checkUp(i);
+            continue;
+        }
+        if (i.item1 != 1 && i.item1 != lines && i.item2 != 1 && i.item2 != columns && !Found)
+        {
+            checkRight(i);
+            checkDown(i);
+            checkUp(i);
+            checkLeft(i);
+            continue;
+        }
+        if (i.item1 != 1 && i.item1 != lines && i.item2 == columns && !Found)
+        {
+            checkUp(i);
+            checkLeft(i);
+            checkLastDown(i);
+            continue;
+        }
+        if (i.item1 == lines && i.item2 == 1 && !Found)
+        {
+            checkUp(i);
+            checkRight(i);
+            continue;
+        }
+        if (i.item1 == lines && i.item2 != 1 && i.item2 != columns && !Found)
+        {
+            checkLeft(i);
+            checkUp(i);
+            checkLastRight(i);
+            continue;
         }
 
-        if (baseMatrice[i.item1 - 1][i.item2] == 0 && !Found)
+        if (Found)
         {
-            newIndex = (i.item1-1) * lines + i.item2-lines;
-
-            positionSteps[newIndex] = new PositionStep(i.item1 - 1, i.item2, 'U', i, newIndex);
-            toBeAddedIndex.Add(newIndex);
-
+            break;
         }
 
-        if (baseMatrice[i.item1][i.item2 + 1] == 0 && !Found)
-        {
-            if ((i.item1, i.item2 + 1) == Goal)
-            {
-                newIndex = i.item1 * lines + i.item2 + 1-lines;
-                positionSteps[newIndex] = new PositionStep(i.item1, i.item2 + 1, 'R', i, newIndex);
-                toBeAddedIndex.Add(newIndex);
-                Foundid = newIndex;
-                Found = true;
-            }
-            else
-            {
-                newIndex = i.item1 * lines + i.item2 + 1-lines;
-                positionSteps[newIndex] = new PositionStep(i.item1, i.item2 + 1, 'R', i, newIndex);
-                toBeAddedIndex.Add(newIndex);
-            }
-        }
 
-        if (baseMatrice[i.item1 + 1][i.item2] == 0 && !Found)
-        {
-            if((i.item1 + 1, i.item2) == Goal)
-            {
-                newIndex = (i.item1+1) * lines + i.item2-lines;
-                positionSteps[newIndex] = new PositionStep(i.item1 + 1, i.item2, 'D', i, newIndex);
-                toBeAddedIndex.Add(newIndex);
-                Foundid = newIndex;
-                Found = true;
-            }
-            else
-            {
-                newIndex = (i.item1+1) * lines + i.item2-lines;
-                positionSteps[newIndex] = new PositionStep(i.item1 + 1, i.item2, 'D', i, newIndex);
-                toBeAddedIndex.Add(newIndex);
-            }
-
-        }
     }
     listRodada.Clear();
     //toBeAddedIndex = toBeAddedIndex.Distinct().ToList();
@@ -226,7 +265,7 @@ void TryPath()
     foreach (var index in toBeAddedIndex)
     {
         var element = positionSteps[index];
-        if(element != null)
+        if (element != null)
         {
             listRodada.Add(element);
             positionSteps[index] = null;
@@ -241,6 +280,94 @@ void TryPath()
     toBeAddedIndex.Clear();
     //DeadEnd = listRodada.Count == 0;
     loopCounter++;
+}
+
+
+
+void checkUp(PositionStep i)
+{
+    if (baseMatrice[i.item1 - 1][i.item2] == 0)
+    {
+        newIndex = (i.item1 - 1) * lines + i.item2 - lines;
+        positionSteps[newIndex] = new PositionStep(i.item1 - 1, i.item2, 'U', i, newIndex);
+        toBeAddedIndex.Add(newIndex);
+    }
+
+}
+void checkRight(PositionStep i)
+{
+    if (baseMatrice[i.item1][i.item2 + 1] == 0)
+    {
+        newIndex = i.item1 * lines + i.item2 + 1 - lines;
+        positionSteps[newIndex] = new PositionStep(i.item1, i.item2 + 1, 'R', i, newIndex);
+        toBeAddedIndex.Add(newIndex);
+
+    }
+
+}
+void checkLastRight(PositionStep i)
+{
+    if (baseMatrice[i.item1][i.item2 + 1] == 0)
+    {
+        if ((i.item1, i.item2 + 1) == Goal)
+        {
+            newIndex = i.item1 * lines + i.item2 + 1 - lines;
+            positionSteps[newIndex] = new PositionStep(i.item1, i.item2 + 1, 'R', i, newIndex);
+            toBeAddedIndex.Clear();
+            toBeAddedIndex.Add(newIndex);
+            Foundid = newIndex;
+            Found = true;
+        }
+        else
+        {
+            newIndex = i.item1 * lines + i.item2 + 1 - lines;
+            positionSteps[newIndex] = new PositionStep(i.item1, i.item2 + 1, 'R', i, newIndex);
+            toBeAddedIndex.Add(newIndex);
+        }
+    }
+
+}
+void checkDown(PositionStep i)
+{
+    if (baseMatrice[i.item1 + 1][i.item2] == 0)
+    {
+        newIndex = (i.item1 + 1) * lines + i.item2 - lines;
+        positionSteps[newIndex] = new PositionStep(i.item1 + 1, i.item2, 'D', i, newIndex);
+        toBeAddedIndex.Add(newIndex);
+
+    }
+}
+void checkLastDown(PositionStep i)
+{
+    if (baseMatrice[i.item1 + 1][i.item2] == 0)
+    {
+        if ((i.item1 + 1, i.item2) == Goal)
+        {
+            newIndex = (i.item1 + 1) * lines + i.item2 - lines;
+            positionSteps[newIndex] = new PositionStep(i.item1 + 1, i.item2, 'D', i, newIndex);
+            toBeAddedIndex.Clear();
+            toBeAddedIndex.Add(newIndex);
+            Foundid = newIndex;
+            Found = true;
+        }
+        else
+        {
+            newIndex = (i.item1 + 1) * lines + i.item2 - lines;
+            positionSteps[newIndex] = new PositionStep(i.item1 + 1, i.item2, 'D', i, newIndex);
+            toBeAddedIndex.Add(newIndex);
+        }
+    }
+}
+void checkLeft(PositionStep i)
+{
+    if (baseMatrice[i.item1][i.item2 - 1] == 0)
+    {
+        newIndex = i.item1 * lines + i.item2 - 1 - lines;
+        positionSteps[newIndex] = new PositionStep(i.item1, i.item2 - 1, 'L', i, newIndex);
+        toBeAddedIndex.Add(newIndex);
+    }
+
+
 }
 void printMatrix(int[][] matrix, string name)
 {
@@ -294,8 +421,8 @@ void printMatrix(int[][] matrix, string name)
 void ReadFileToMatrix()
 {
     //using (FileStream fileStream = new FileStream("C:\\Users\\felip\\OneDrive\\Área de Trabalho\\input.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-    //using (FileStream fileStream = new FileStream("C:\\Users\\41140878859\\Desktop\\projetos_git\\stone-automata-maze-challenge\\input.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-    using (FileStream fileStream = new FileStream("E:\\Git pessoal\\stone-automata-maze-challenge\\input.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+    using (FileStream fileStream = new FileStream("C:\\Users\\41140878859\\Desktop\\projetos_git\\stone-automata-maze-challenge\\input.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+    //using (FileStream fileStream = new FileStream("E:\\Git pessoal\\stone-automata-maze-challenge\\input.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
     {
         // Construct the input string
         StringBuilder inputBuilder = new StringBuilder();
@@ -334,16 +461,16 @@ void ReadFileToMatrix()
                 }
             }
         }
-        for (int j = 0; j <= columns + 1; j++)
-        {
-            baseMatrice[0][j] = 1; // top border
-            baseMatrice[lines + 1][j] = 1; // bottom border
-        }
-        for (int i = 1; i <= lines + 1; i++)
-        {
-            baseMatrice[i][0] = 1; // left border
-            baseMatrice[i][columns + 1] = 1; // right border
-        }
+        //for (int j = 0; j <= columns + 1; j++)
+        //{
+        //    baseMatrice[0][j] = 1; // top border
+        //    baseMatrice[lines + 1][j] = 1; // bottom border
+        //}
+        //for (int i = 1; i <= lines + 1; i++)
+        //{
+        //    baseMatrice[i][0] = 1; // left border
+        //    baseMatrice[i][columns + 1] = 1; // right border
+        //}
     }
 }
 /*void PathTeste()
@@ -355,7 +482,11 @@ void ReadFileToMatrix()
     foreach (var rota in teste.PathMonalisa)
     {
         StepExecute();
-        CheckChanges();
+        Array.Copy(tempMatrice, baseMatrice, tempMatrice.Length);
+        for (int u = 0; u < baseMatrice.Length; u++)
+        {
+            tempMatrice[u] = new int[columns + 2];
+        }
         baseMatrice[Start.Item1][Start.Item2] = 0;
         baseMatrice[Goal.Item1][Goal.Item2] = 0;
         //printMatrix(baseMatrice, "Matriz para andar");
