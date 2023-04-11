@@ -1,7 +1,5 @@
-﻿using ConsoleApp1;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
-using System.Numerics;
 using System.Text;
 
 
@@ -22,7 +20,7 @@ int newIndex = 0;
 
 #region Setup Data Set
 
-int[][] baseMatrice;
+byte[][] baseMatrice;
 ReadFileToMatrix();
 int diagonal = (int)(Math.Sqrt(Math.Pow(Goal.Item1 + 1, 2) + Math.Pow(Goal.Item2 + 1, 2)) * 1.5);
 
@@ -35,10 +33,11 @@ List<int> toBeAddedIndex = new List<int>(lengthTotal + 1);
 List<PositionStep> listRodada = new List<PositionStep>(lengthTotal / 4);
 //stack.Push(new PositionStep(Start.Item1, Start.Item2, '\0', null));
 listRodada.Add(new PositionStep(Start.Item1, Start.Item2, '\0', null, 1));
-int[][] tempMatrice = new int[baseMatrice.Length][];
+byte[][] tempMatrice = new byte[baseMatrice.Length][];
+
 for (int i = 0; i < baseMatrice.Length; i++)
 {
-    tempMatrice[i] = new int[columns + 2];
+    tempMatrice[i] = new byte[columns + 2];
 }
 baseMatrice[Start.Item1][Start.Item2] = 0;
 baseMatrice[Goal.Item1][Goal.Item2] = 0;
@@ -50,11 +49,7 @@ while (!Found && !DeadEnd)
     //start and goal set to 0 to not mess with the stepexecute
     StepExecute();
     //CheckChanges();
-    Array.Copy(tempMatrice, baseMatrice, tempMatrice.Length);
-    for (int i = 0; i < baseMatrice.Length; i++)
-    {
-        tempMatrice[i] = new int[columns + 2];
-    }
+
     baseMatrice[Start.Item1][Start.Item2] = 0;
     baseMatrice[Goal.Item1][Goal.Item2] = 0;
     //printMatrix(baseMatrice, "1");
@@ -76,7 +71,12 @@ Console.WriteLine($"\r\nExecution Time: {ts.TotalMinutes} minutes and {ts.TotalM
 
 //Methods
 
-
+static void Swap(ref byte[][] m, ref byte[][] mr)
+{
+    var tmp = m;
+    m = mr;
+    mr = tmp;
+}
 void GetPathNew()
 {
     Console.WriteLine("Steps:");
@@ -100,14 +100,14 @@ void GetPathNew()
     Console.WriteLine($"{loopCounter} Steps to found a solution\r\n");
 
 }
-
 void StepExecute()
 {
+
     Parallel.For(1, (int)lines + 1, i =>
     {
         for (int j = 1; j <= columns; j++)
         {
-            int countGreen = baseMatrice[i - 1][j - 1] + baseMatrice[i - 1][j] + baseMatrice[i - 1][j + 1] + baseMatrice[i][j - 1] + baseMatrice[i][j + 1] + baseMatrice[i + 1][j - 1] + baseMatrice[i + 1][j] + baseMatrice[i + 1][j + 1];
+            byte countGreen = (byte)(baseMatrice[i - 1][j - 1] + baseMatrice[i - 1][j] + baseMatrice[i - 1][j + 1] + baseMatrice[i][j - 1] + baseMatrice[i][j + 1] + baseMatrice[i + 1][j - 1] + baseMatrice[i + 1][j] + baseMatrice[i + 1][j + 1]);
             if (baseMatrice[i][j] == 0)
             {
                 if (countGreen > 1 && countGreen < 5) tempMatrice[i][j] = 1;
@@ -120,7 +120,7 @@ void StepExecute()
             }
         }
     });
-
+    Swap(ref baseMatrice, ref tempMatrice);
 }
 
 
@@ -421,8 +421,8 @@ void printMatrix(int[][] matrix, string name)
 void ReadFileToMatrix()
 {
     //using (FileStream fileStream = new FileStream("C:\\Users\\felip\\OneDrive\\Área de Trabalho\\input.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-    using (FileStream fileStream = new FileStream("C:\\Users\\41140878859\\Desktop\\projetos_git\\stone-automata-maze-challenge\\input.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-    //using (FileStream fileStream = new FileStream("E:\\Git pessoal\\stone-automata-maze-challenge\\input.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+    //using (FileStream fileStream = new FileStream("C:\\Users\\41140878859\\Desktop\\projetos_git\\stone-automata-maze-challenge\\input.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+    using (FileStream fileStream = new FileStream("E:\\Git pessoal\\stone-automata-maze-challenge\\input.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
     {
         // Construct the input string
         StringBuilder inputBuilder = new StringBuilder();
@@ -441,10 +441,10 @@ void ReadFileToMatrix()
         lines = FileLines.Length;
 
         // Create new jagged array with border
-        baseMatrice = new int[lines + 2][];
+        baseMatrice = new byte[lines + 2][];
         for (int i = 0; i < baseMatrice.Length; i++)
         {
-            baseMatrice[i] = new int[columns + 2];
+            baseMatrice[i] = new byte[columns + 2];
         }
 
         // Read and parse lines
@@ -453,7 +453,7 @@ void ReadFileToMatrix()
             string[] values = FileLines[row - 1].Trim().Split(' ');
             for (int col = 1; col <= columns; col++)
             {
-                if (int.TryParse(values[col - 1], NumberStyles.None, CultureInfo.InvariantCulture, out int value))
+                if (byte.TryParse(values[col - 1], NumberStyles.None, CultureInfo.InvariantCulture, out byte value))
                 {
                     baseMatrice[row][col] = value;
                     if (value == 3) Start = (row, col);
@@ -479,13 +479,12 @@ void ReadFileToMatrix()
     int i = 1, j = 1;
     (int, int) posicao = (i, j);
     int countt = 0;
-    foreach (var rota in teste.PathMonalisa)
+    foreach (var rota in teste.PathChallenge1)
     {
         StepExecute();
-        Array.Copy(tempMatrice, baseMatrice, tempMatrice.Length);
         for (int u = 0; u < baseMatrice.Length; u++)
         {
-            tempMatrice[u] = new int[columns + 2];
+            tempMatrice[u] = new byte[columns + 2];
         }
         baseMatrice[Start.Item1][Start.Item2] = 0;
         baseMatrice[Goal.Item1][Goal.Item2] = 0;
